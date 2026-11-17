@@ -1,0 +1,22 @@
+# Terraform directories
+.terraform/
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Terraform plan files
+*.tfplan
+
+# Terraform crash logs
+crash.log
+
+# Ignore personal variable values
+*.tfvars
+
+# Allow example variables file
+!terraform.tfvars.example
+
+# SSH private keys
+*.pem
+*.key
