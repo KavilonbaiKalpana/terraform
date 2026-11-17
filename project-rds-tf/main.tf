@@ -1,27 +1,3 @@
-# Security group for RDS
-resource "aws_security_group" "rds_sg" {
-  name        = "rds_security_group"
-  description = "Security group for RDS instance"
-
-  ingress {
-    from_port   = 5432  # PostgreSQL default port (replace with your DB engine's port if different)
-    to_port     = 5432
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Allows access from any IP address (for testing purposes)
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"  # Allows all outbound traffic
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "rds_security_group"
-  }
-}
-
 # Subnet group for RDS
 resource "aws_db_subnet_group" "rds_subnet_group" {
   name       = "rds_subnet_group"
