@@ -1,78 +1,113 @@
+# AWS region
 variable "region" {
-  description = "The AWS region to deploy resources in"
+  description = "AWS region to deploy resources"
   type        = string
   default     = "ap-south-1"
 }
 
-variable "db_instance_class" {
-  description = "The instance type for the RDS instance"
+# Project name
+variable "project_name" {
+  description = "Name of the RDS project"
   type        = string
-  default     = "db.t3.micro"
+  default     = "project-rds-tf"
 }
 
+# VPC CIDR
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+# Private subnet CIDRs
+variable "private_subnet_cidrs" {
+  description = "CIDR blocks for private subnets"
+  type        = list(string)
+
+  default = [
+    "10.0.1.0/24",
+    "10.0.2.0/24"
+  ]
+
+  validation {
+    condition     = length(var.private_subnet_cidrs) == 2
+    error_message = "Exactly two private subnet CIDRs are required."
+  }
+}
+
+# Database name
 variable "db_name" {
-  description = "The name of the database to be created"
+  description = "Name of the PostgreSQL database"
   type        = string
   default     = "mydatabase"
 }
 
+# Database engine
 variable "db_engine" {
-  description = "The database engine to use"
+  description = "RDS database engine"
   type        = string
   default     = "postgres"
 }
 
+# Database engine version
 variable "db_engine_version" {
-  description = "The version of the database engine"
+  description = "PostgreSQL engine version"
   type        = string
   default     = "15.7"
 }
-variable "db_engine_pggroup" {
-  description = "The version of the parameter group"
+
+# Parameter group family
+variable "db_parameter_group_family" {
+  description = "PostgreSQL parameter group family"
   type        = string
-  default     = "15"
+  default     = "postgres15"
 }
+
+# RDS instance class
+variable "db_instance_class" {
+  description = "RDS instance class"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+# Database username
 variable "db_username" {
-  description = "The master username for the RDS instance"
+  description = "RDS master username"
   type        = string
   default     = "reyaz"
 }
 
+# Database password
 variable "db_password" {
-  description = "The master password for the RDS instance"
+  description = "RDS master password"
   type        = string
+  sensitive   = true
 }
 
+# Allocated storage
 variable "allocated_storage" {
-  description = "The allocated storage in GB"
+  description = "RDS storage in GB"
   type        = number
   default     = 20
 }
 
-variable "vpc_id" {
-  description = "The ID of the VPC where the RDS instance will be deployed"
-  type        = string
-}
-
-variable "subnet_ids" {
-  description = "A list of subnet IDs within the VPC"
-  type        = list(string)
-}
-
+# Backup retention
 variable "db_backup_retention_period" {
-  description = "The number of days to retain backups"
+  description = "Number of days to retain automated backups"
   type        = number
   default     = 7
 }
 
+# Backup window
 variable "db_backup_window" {
-  description = "The daily time range during which automated backups are created"
+  description = "Daily backup window in UTC"
   type        = string
   default     = "03:00-04:00"
 }
 
+# Maintenance window
 variable "db_maintenance_window" {
-  description = "The weekly time range during which system maintenance can occur"
+  description = "Weekly maintenance window in UTC"
   type        = string
   default     = "sun:05:00-sun:06:00"
 }
