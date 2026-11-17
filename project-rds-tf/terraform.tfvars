@@ -10,7 +10,7 @@ private_subnet_cidrs = [
 
 db_name                   = "mydatabase"
 db_engine                 = "postgres"
-db_engine_version         = "15.7"
+db_engine_version         = "15.15"
 db_parameter_group_family = "postgres15"
 
 db_instance_class = "db.t3.micro"
