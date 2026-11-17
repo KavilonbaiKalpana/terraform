@@ -1,69 +1,112 @@
-# Creating VPC
-resource "aws_vpc" "myvpc" {
-  cidr_block = var.cidr
+# Get available Availability Zones
+data "aws_availability_zones" "available" {
+  state = "available"
 }
 
-#Creating Subnets
-resource "aws_subnet" "sub1" {
-  vpc_id                  = aws_vpc.myvpc.id
-  cidr_block              = "192.168.1.0/24"
-  availability_zone       = "ap-south-1a"
-  map_public_ip_on_launch = true
-}
+# Get latest Amazon Linux 2023 AMI
+data "aws_ami" "amazon_linux_2023" {
+  most_recent = true
+  owners      = ["amazon"]
 
-resource "aws_subnet" "sub2" {
-  vpc_id                  = aws_vpc.myvpc.id
-  cidr_block              = "192.168.2.0/24"
-  availability_zone       = "ap-south-1b"
-  map_public_ip_on_launch = true
-}
+  filter {
+    name   = "name"
+    values = ["al2023-ami-2023.*-x86_64"]
+  }
 
-#Creating Internet Gateway
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.myvpc.id
-}
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
 
-#Creating Route Tables
-resource "aws_route_table" "RT" {
-  vpc_id = aws_vpc.myvpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
   }
 }
 
-#Creating Subnet Association
-resource "aws_route_table_association" "rta1" {
-  subnet_id      = aws_subnet.sub1.id
-  route_table_id = aws_route_table.RT.id
+# Create VPC
+resource "aws_vpc" "main" {
+  cidr_block           = var.vpc_cidr
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-vpc"
+  })
 }
 
-resource "aws_route_table_association" "rta2" {
-  subnet_id      = aws_subnet.sub2.id
-  route_table_id = aws_route_table.RT.id
+# Create Internet Gateway
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-igw"
+  })
 }
 
-#Creating Security Groups
-resource "aws_security_group" "webSg" {
-  name   = "web"
-  vpc_id = aws_vpc.myvpc.id
+# Create two public subnets
+resource "aws_subnet" "public" {
+  count = 2
 
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.public_subnet_cidrs[count.index]
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+
+  map_public_ip_on_launch = true
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-public-subnet-${count.index + 1}"
+    Tier = "Public"
+  })
+}
+
+# Create public route table
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
+  }
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-public-rt"
+  })
+}
+
+# Associate route table with public subnets
+resource "aws_route_table_association" "public" {
+  count = 2
+
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public.id
+}
+
+# Create security group
+resource "aws_security_group" "web" {
+  name        = "${var.project_name}-web-sg"
+  description = "Allow SSH and HTTP traffic"
+  vpc_id      = aws_vpc.main.id
+
+  # SSH access from your IP only
   ingress {
-    description = "HTTP from VPC"
+    description = "SSH access"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.ssh_allowed_cidr]
+  }
+
+  # HTTP access from internet
+  ingress {
+    description = "HTTP access"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
+  # Allow outbound traffic
   egress {
     from_port   = 0
     to_port     = 0
@@ -71,84 +114,47 @@ resource "aws_security_group" "webSg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name = "Web-sg"
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-web-sg"
+  })
+}
+
+# Create two EC2 instances
+resource "aws_instance" "web" {
+  count = 2
+
+  ami           = data.aws_ami.amazon_linux_2023.id
+  instance_type = var.instance_type
+
+  subnet_id = aws_subnet.public[count.index].id
+
+  vpc_security_group_ids = [
+    aws_security_group.web.id
+  ]
+
+  associate_public_ip_address = true
+
+  key_name = var.key_pair_name != "" ? var.key_pair_name : null
+
+  # Different user-data scripts for both instances
+  user_data = file(
+    "${path.module}/${count.index == 0 ? "userdata.sh" : "userdata1.sh"}"
+  )
+
+  user_data_replace_on_change = true
+
+  metadata_options {
+    http_tokens = "required"
   }
-}
 
-# Creating S3 Bucket
-resource "aws_s3_bucket" "example" {
-  bucket = "terraform-s3-test-reya-project"
-}
-
-# Creating Ec2-instance with the VPC
-resource "aws_instance" "webserver1" {
-  ami                    = "ami-02b8269d5e85954ef"
-  instance_type          = "t3.micro"
-  vpc_security_group_ids = [aws_security_group.webSg.id]
-  subnet_id              = aws_subnet.sub1.id
-  user_data              = base64encode(file("userdata.sh"))
-}
-
-resource "aws_instance" "webserver2" {
-  ami                    = "ami-02b8269d5e85954ef"
-  instance_type          = "t3.micro"
-  vpc_security_group_ids = [aws_security_group.webSg.id]
-  subnet_id              = aws_subnet.sub2.id
-  user_data              = base64encode(file("userdata1.sh"))
-}
-
-#create alb
-resource "aws_lb" "myalb" {
-  name               = "myalb"
-  internal           = false
-  load_balancer_type = "application"
-
-  security_groups = [aws_security_group.webSg.id]
-  subnets         = [aws_subnet.sub1.id, aws_subnet.sub2.id]
-
-  tags = {
-    Name = "web"
+  root_block_device {
+    volume_size           = 8
+    volume_type           = "gp3"
+    encrypted             = true
+    delete_on_termination = true
   }
-}
 
-# Creating Load Balancer
-resource "aws_lb_target_group" "tg" {
-  name     = "myTG"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.myvpc.id
-
-  health_check {
-    path = "/"
-    port = "traffic-port"
-  }
-}
-
-# Attaching Load Balancer
-resource "aws_lb_target_group_attachment" "attach1" {
-  target_group_arn = aws_lb_target_group.tg.arn
-  target_id        = aws_instance.webserver1.id
-  port             = 80
-}
-
-resource "aws_lb_target_group_attachment" "attach2" {
-  target_group_arn = aws_lb_target_group.tg.arn
-  target_id        = aws_instance.webserver2.id
-  port             = 80
-}
-
-resource "aws_lb_listener" "listener" {
-  load_balancer_arn = aws_lb.myalb.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    target_group_arn = aws_lb_target_group.tg.arn
-    type             = "forward"
-  }
-}
-
-output "loadbalancerdns" {
-  value = aws_lb.myalb.dns_name
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-web-${count.index + 1}"
+  })
 }
