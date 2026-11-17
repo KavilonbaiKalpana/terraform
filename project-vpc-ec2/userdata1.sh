@@ -1,39 +1,35 @@
 #!/bin/bash
-apt update
-apt install -y apache2
 
-# Get the instance ID using the instance metadata
-INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+set -euxo pipefail
 
-# Install the AWS CLI
-apt install -y awscli
+# Update packages
+dnf update -y
 
-# Download the images from S3 bucket
-#aws s3 cp s3://myterraformprojectbucket2023/project.webp /var/www/html/project.png --acl public-read
+# Install Apache
+dnf install -y httpd
 
-# Create a simple HTML file with the portfolio content and display the images
-cat <<EOF > /var/www/html/index.html
+# Start and enable Apache
+systemctl enable --now httpd
+
+# Create website
+cat > /var/www/html/index.html <<'HTML'
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My Portfolio</title>
-  <style>
-    /* Add animation and styling for the text */
-    @keyframes colorChange {
-      0% { color: red; }
-      50% { color: green; }
-      100% { color: blue; }
-    }
-    h1 {
-      animation: colorChange 2s infinite;
-    }
-  </style>
+    <title>VPC Web Server 2</title>
 </head>
-<body>
-  <h1>Terraform Project Server 2</h1>
-  <h2>Instance ID: <span style="color:green">$INSTANCE_ID</span></h2>
-  <p>Welcome to all my lovely students</p>
+<body style="text-align:center; font-family:Arial;">
+
+    <h1>Welcome to Web Server 2</h1>
+
+    <h2>Amazon Linux 2023</h2>
+
+    <h3>Terraform VPC Project</h3>
+
+    <p>Apache Web Server is running successfully!</p>
+
+    <p>Public Subnet 2</p>
 
 </body>
 </html>
-EOF
+HTML
