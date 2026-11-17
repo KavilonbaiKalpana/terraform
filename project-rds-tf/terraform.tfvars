@@ -15,7 +15,7 @@ db_parameter_group_family = "postgres15"
 
 db_instance_class = "db.t3.micro"
 
-db_username = "reyaz"
+db_username = "kalpana"
 
 # Replace with a new, strong, unique password.
 db_password = "REPLACE_WITH_A_NEW_STRONG_PASSWORD"
@@ -23,6 +23,3 @@ db_password = "REPLACE_WITH_A_NEW_STRONG_PASSWORD"
 allocated_storage = 20
 
 db_backup_retention_period = 0
-
-db_backup_window     = "03:00-04:00"
-db_maintenance_window = "sun:05:00-sun:06:00"
