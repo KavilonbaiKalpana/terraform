@@ -1,7 +1,3 @@
-provider "aws" {
-  region = var.region
-}
-
 # Security group for RDS
 resource "aws_security_group" "rds_sg" {
   name        = "rds_security_group"
