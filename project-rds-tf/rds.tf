@@ -44,7 +44,6 @@ resource "aws_db_instance" "postgres" {
   # Deletion settings for this learning project
   deletion_protection = false
   skip_final_snapshot = true
-
   copy_tags_to_snapshot = true
 
   tags = {
