@@ -19,7 +19,11 @@ variable "vpc_cidr" {
 variable "public_subnet_cidrs" {
   description = "Public subnet CIDR blocks"
   type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+
+  default = [
+    "10.0.1.0/24",
+    "10.0.2.0/24"
+  ]
 
   validation {
     condition     = length(var.public_subnet_cidrs) == 2
@@ -34,7 +38,7 @@ variable "instance_type" {
 }
 
 variable "ssh_allowed_cidr" {
-  description = "Your public IP address in CIDR notation"
+  description = "Your public IP in CIDR notation"
   type        = string
 
   validation {
@@ -44,7 +48,7 @@ variable "ssh_allowed_cidr" {
 }
 
 variable "key_pair_name" {
-  description = "Existing EC2 key pair name for SSH access"
+  description = "Existing EC2 key pair name"
   type        = string
   default     = ""
 }
