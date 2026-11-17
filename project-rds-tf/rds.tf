@@ -34,8 +34,7 @@ resource "aws_db_instance" "postgres" {
   multi_az = false
 
   # Backup configuration
-  backup_retention_period = var.db_backup_retention_period
-  backup_window           = var.db_backup_window
+  backup_retention_period = 0
 
   # Maintenance configuration
   maintenance_window = var.db_maintenance_window
