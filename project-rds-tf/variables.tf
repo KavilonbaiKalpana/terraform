@@ -74,7 +74,7 @@ variable "db_instance_class" {
 variable "db_username" {
   description = "RDS master username"
   type        = string
-  default     = "reyaz"
+  default     = "kalpana"
 }
 
 # Database password
@@ -95,7 +95,7 @@ variable "allocated_storage" {
 variable "db_backup_retention_period" {
   description = "Number of days to retain automated backups"
   type        = number
-  default     = 7
+  default     = 0
 }
 
 # Backup window
