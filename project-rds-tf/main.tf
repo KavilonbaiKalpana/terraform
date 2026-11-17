@@ -22,8 +22,7 @@ resource "aws_db_instance" "default" {
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
 
   # Backup and maintenance settings
-  backup_retention_period = var.db_backup_retention_period
-  backup_window           = var.db_backup_window
+  backup_retention_period = 0
   maintenance_window      = var.db_maintenance_window
 
   skip_final_snapshot = true  # Skip final snapshot on deletion (for testing purposes)
